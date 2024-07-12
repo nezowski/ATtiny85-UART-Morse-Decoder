@@ -1,6 +1,6 @@
 # ATtiny85 UART - Morse Decoder
 
-This project is a simple UART to Morse code translator written in assembly for the ATtiny85 microcontroller. It accepts uppercase letters and spaces sent via UART at a baud rate of 9600 and outputs a 563Hz Morse code signal at 20 words per minute (WPM).
+This project is a simple UART to Morse code translator written in assembly for the ATtiny85 microcontroller. It accepts uppercase letters and spaces sent via UART at a baud rate of 9600 and outputs a 563Hz Morse code signal at 20 words per minute (WPM). There is also version with morse message stored in program memory.
 
 ## Hardware Requirements
 * ATtinyX5 microcontroller
