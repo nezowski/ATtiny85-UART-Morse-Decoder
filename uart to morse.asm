@@ -112,7 +112,7 @@ FIRST_LOOP:						; wait for startbit (rx = 0)
 	brts FIRST_LOOP
 	rjmp DONE_WAITING
 
-NEXT:							; wait of startbit OR timeout (means that there is no data to send)
+NEXT:							; wait of startbit OR timeout (means that there is no data left to send)
 	ldi r17, 0
 NEXT_LOOP:
 	inc r17
@@ -220,7 +220,7 @@ SET_UP_MORSE:
 	sbrs temp_reg, 4 
 	rjmp LOOP						; wait for interrupt flag (60ms has passed)
 
-	ldi temp_reg, 0x40
+	ser temp_reg
 	out TIFR, temp_reg				; clear flag manually (idk why writing 1 is clearing it but ok)
 	
 	lds temp_reg, ZERO_COUNT
@@ -253,13 +253,18 @@ FIRST_BOOT:
 
 	ldi temp_reg, 0
 	cp r0, temp_reg					; check if loaded letter isnt 0 (nop at end of message)
-	breq FAR_RESET					; goes to reset vector
+	breq FAR_RESET					; goes to reset vector (waits for next data to be sent)
 
 
-	ldi r17, 'A'
-	sub r0, r17						; convert from ascii to 0 - 25 number
+	ldi temp_reg, 'A'
+	sub r0, temp_reg				; convert from ascii to 0 - 25 number
+	brcs SEND_SPACE					; if carry is set (r0 < 0), incorrect character was sent
+	
+	ldi temp_reg, 0x1A
+	cp r0, temp_reg
+	brcc SEND_SPACE					; if carry is cleared (r0 > 25), incorrect character was sent
 
-
+	clr temp_reg
 	lsl r0							; multiply by 2, as each letter takes 2 bytes
 	ldi ZL, low(LETTERS*2)
 	ldi ZH, high(LETTERS*2)			; load address of LETTERS
@@ -297,7 +302,6 @@ TRANSMISSION_LABEL_0:
 	sts ZERO_COUNT, temp_reg
 
 
-	clt								; clear T flag, it will be set by an interrupt (60ms time period)
 	rjmp LOOP						; END OF LOOP
 
 BEEP_ON:
@@ -310,7 +314,7 @@ BEEP_ON:
 	ret
 
 BEEP_OFF:
-	cbi PORTB, 0
+	cbi PORTB, 0					; turn LED off
 	push temp_reg
 	in temp_reg, TCCR1
 	cbr temp_reg, (1 << COM1A0)		; disconnects Timer1 Comparator from output pin (PB1)
@@ -321,7 +325,7 @@ BEEP_OFF:
 FAR_RESET:
 	cbi PORTB, 0
 	cli
-	rcall BEEP_OFF
+	rcall BEEP_OFF		; turn off LED and buzzer, jump to reset vector
 	ldi ZL, 0
 	ldi ZH, 0
 	ijmp
@@ -330,30 +334,32 @@ FAR_RESET:
 
 
 LETTERS:
-	.dw 0b0000000000011101  ; A
-    .dw 0b0000000101010111  ; B
-    .dw 0b0000010111010111  ; C
-    .dw 0b0000000001010111  ; D
-    .dw 0b0000000000000001  ; E
-    .dw 0b0000000101110101  ; F
-    .dw 0b0000000101110111  ; G
-    .dw 0b0000000001010101  ; H
-    .dw 0b0000000000000101  ; I
-    .dw 0b0001110111011101  ; J
-    .dw 0b0000000111010111  ; K
-    .dw 0b0000000101011101  ; L
-    .dw 0b0000000001110111  ; M
-    .dw 0b0000000000010111  ; N
-    .dw 0b0000011101110111  ; O
-    .dw 0b0000010111011101  ; P
-    .dw 0b0001110101110111  ; Q
-    .dw 0b0000000001011101  ; R
-    .dw 0b0000000000010101  ; S
-    .dw 0b0000000000000111	; T
-    .dw 0b0000000001110101  ; U
-    .dw 0b0000000111010101  ; V
-    .dw 0b0000000111011101  ; W
-    .dw 0b0000011101010111  ; X
-    .dw 0b0001110111010111  ; Y
-    .dw 0b0000010101110111	; Z
+	.dw 0b0000000000011101	; A
+	.dw 0b0000000101010111	; B
+	.dw 0b0000010111010111	; C
+	.dw 0b0000000001010111	; D
+	.dw 0b0000000000000001	; E
+	.dw 0b0000000101110101	; F
+	.dw 0b0000000101110111	; G
+	.dw 0b0000000001010101	; H
+	.dw 0b0000000000000101	; I
+	.dw 0b0001110111011101	; J
+	.dw 0b0000000111010111	; K
+	.dw 0b0000000101011101	; L
+	.dw 0b0000000001110111	; M
+	.dw 0b0000000000010111	; N
+	.dw 0b0000011101110111	; O
+	.dw 0b0000010111011101	; P
+	.dw 0b0001110101110111	; Q
+	.dw 0b0000000001011101	; R
+	.dw 0b0000000000010101	; S
+	.dw 0b0000000000000111	; T
+	.dw 0b0000000001110101	; U
+	.dw 0b0000000111010101	; V
+	.dw 0b0000000111011101	; W
+	.dw 0b0000011101010111	; X
+	.dw 0b0001110111010111	; Y
+	.dw 0b0000010101110111	; Z
+
+
 
