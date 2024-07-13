@@ -3,7 +3,7 @@
 ;	This is simple uart to morse code translator
 ;	Connect speaker to pin 6 (PB1) and TX from transmitter to pin 3 (PB4)
 ;	Baud rate is 9600
-;	It accepts only upper case letters and spaces, idk what happens if u send anything else
+;	It accepts only upper case letters and spaces, other characters will be interpreted as space
 
 .equ CURRENT_CHARACTER = SRAM_START			; 1 byte
 .equ ZERO_COUNT = SRAM_START + 1			; 1 byte, keeps track of how many zeros was sent since last (helps recognizing end of character) 
